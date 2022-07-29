@@ -10,15 +10,15 @@ export HISTCONTROL=ignoredups
 export HISTFILESIZE=100000
 export HISTSIZE=5000
 
-# # Readline, the line editing library that bash uses, does not know
-# # that the terminal escape sequences do not take up space on the
-# # screen. The redisplay code assumes, unless told otherwise, that
-# # each character in the prompt is a `printable' character that
-# # takes up one character position on the screen. 
+# Readline, the line editing library that bash uses, does not know
+# that the terminal escape sequences do not take up space on the
+# screen. The redisplay code assumes, unless told otherwise, that
+# each character in the prompt is a `printable' character that
+# takes up one character position on the screen. 
 
-# # You can use the bash prompt expansion facility (see the PROMPTING
-# # section in the manual page) to tell readline that sequences of
-# # characters in the prompt strings take up no screen space. 
+# You can use the bash prompt expansion facility (see the PROMPTING
+# section in the manual page) to tell readline that sequences of
+# characters in the prompt strings take up no screen space. 
 
 # Use the \[ escape to begin a sequence of non-printing characters,
 # and the \] escape to signal the end of such a sequence.
@@ -33,26 +33,41 @@ CUSTOMCOLORMIX='\[\e[1;30m\]'
 DARKCUSTOMCOLORMIX='\[\e[1;32m\]'
 LIGHTBLUE="\[\033[1;36m\]"
 PURPLE='\[\e[1;35m\]' #git branch
+OCHRE="\033[38;5;95m"
 # EG: GREEN="\[\e[0;32m\]" 
 #PURPLE='\[\e[1;35m\]'
 #BLUE='\[\e[1;34m\]'
 NC='\[\e[0m\]' # No Color
-#PS1="\[\033[1;34;40m[\033[1;31;40m\u@\h:\w\033[1;34;40m]\033[1;37;40m $\033[0;37;0m\] "
-#PS1="${CUSTOMCOLORMIX}\\u@\h: \\W]\\$ ${NC}"
 
-# PS1 (shell prompt)
-# set variable identifying the chroot you work in (used in the prompt below)
-#if [ -z "$debian_chroot" ] && [ -r /etc/debian_chroot ]; then
-#    debian_chroot=$(cat /etc/debian_chroot)
-#fi
-
-# function parse_git_dirty {
-#  git diff --quiet HEAD &>/dev/null
-#  [[ $? == 1 ]] && echo "⚡"
-# }
-git config --global alias.ci commit
 git config --global alias.aa "add -N ."
 git config --global alias.ap "add --patch"
-# # PS1="${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\$(parse_git_branch)\[\033[00m\]\$"
 
-# PS1="${LIGHTBLUE}\\u ${BOLDYELLOW}[\\W] ${PURPLE}\$(parse_git_branch)(╯°□°）╯︵ ┻━┻ ${DARKCUSTOMCOLORMIX}$ ${NC}"
+function git_color {
+  local git_status="$(git status 2> /dev/null)"
+
+  if [[ ! $git_status =~ "working tree clean" ]]; then
+    echo -e $RED
+  elif [[ $git_status =~ "Your branch is ahead of" ]]; then
+    echo -e $BOLDYELLOW
+  elif [[ $git_status =~ "nothing to commit" ]]; then
+    echo -e $GREEN
+  else
+    echo -e $OCHRE
+  fi
+}
+
+function parse_git_branch {
+  local git_status="$(git status 2> /dev/null)"
+  local on_branch="On branch ([^${IFS}]*)"
+  local on_commit="HEAD detached at ([^${IFS}]*)"
+
+  if [[ $git_status =~ $on_branch ]]; then
+    local branch=${BASH_REMATCH[1]}
+    echo "($branch)"
+  elif [[ $git_status =~ $on_commit ]]; then
+    local commit=${BASH_REMATCH[1]}
+    echo "($commit)"
+  fi
+}
+
+PS1="${LIGHTBLUE}\\u ${BOLDYELLOW}[\\W] $(git_color)$(parse_git_branch)${PURPLE} (╯°□°）╯︵ ┻━┻ ${DARKCUSTOMCOLORMIX}$ ${NC}"
